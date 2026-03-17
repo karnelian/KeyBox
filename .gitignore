@@ -1,0 +1,16 @@
+node_modules/
+dist/
+src-tauri/target/
+*.exe
+*.msi
+tsconfig.tsbuildinfo
+
+.env
+.env.*
+*.db
+*.db-wal
+*.db-shm
+
+.bkit/
+.claude/
+src-tauri/.claude/

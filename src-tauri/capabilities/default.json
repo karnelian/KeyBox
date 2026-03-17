@@ -1,0 +1,11 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for KeyBox",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text",
+    "dialog:allow-open"
+  ]
+}
