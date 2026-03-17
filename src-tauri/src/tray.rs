@@ -17,6 +17,7 @@ pub fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let _tray = TrayIconBuilder::new()
         .icon(icon)
         .menu(&menu)
+        .menu_on_left_click(false) // 좌클릭 시 메뉴 안 열기
         .tooltip("KeyBox")
         .on_menu_event(move |app, event| match event.id.as_ref() {
             "show" => {
@@ -37,7 +38,8 @@ pub fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
-            if let tauri::tray::TrayIconEvent::DoubleClick { .. } = event {
+            // 좌클릭 → 바로 창 열기
+            if let tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
                 let app = tray.app_handle();
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();

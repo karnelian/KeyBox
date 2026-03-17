@@ -50,6 +50,12 @@ export interface UpdateCategoryInput {
   icon?: string;
 }
 
+export interface UpdateProjectInput {
+  id: string;
+  name?: string;
+  color?: string;
+}
+
 export interface ImportResult {
   categoriesImported: number;
   secretsImported: number;

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as commands from "@/lib/commands";
-import type { Project } from "@/types";
+import type { Project, UpdateProjectInput } from "@/types";
 
 interface ProjectState {
   projects: Project[];
@@ -8,6 +8,7 @@ interface ProjectState {
   fetchProjects: () => Promise<void>;
   selectProject: (id: string | null) => void;
   addProject: (name: string, color: string) => Promise<void>;
+  updateProject: (input: UpdateProjectInput) => Promise<void>;
   removeProject: (id: string) => Promise<void>;
 }
 
@@ -24,6 +25,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   addProject: async (name, color) => {
     await commands.createProject(name, color);
+    await get().fetchProjects();
+  },
+
+  updateProject: async (input) => {
+    await commands.updateProject(input);
     await get().fetchProjects();
   },
 

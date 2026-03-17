@@ -15,7 +15,7 @@ import { useAutoLock } from "@/lib/useAutoLock";
 import { useProjectStore } from "@/stores/projectStore";
 import { useToast } from "@/components/Toast";
 import * as commands from "@/lib/commands";
-import type { AppConfig } from "@/types";
+import type { AppConfig, Project } from "@/types";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -29,6 +29,7 @@ export function MainScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
 
   // 설정 상태
   const [autoLockMinutes, setAutoLockMinutes] = useState(5);
@@ -54,6 +55,19 @@ export function MainScreen() {
   }, [theme]);
 
   useAutoLock(autoLockMinutes);
+
+  // 트레이 잠금 이벤트 수신 (X 버튼 → 트레이 최소화 시 자동 잠금)
+  useEffect(() => {
+    if (!isTauri) return;
+    let unlisten: (() => void) | undefined;
+    (async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      unlisten = await listen("tray-lock", () => {
+        lock();
+      });
+    })();
+    return () => { unlisten?.(); };
+  }, [lock]);
 
   useEffect(() => {
     fetchCategories();
@@ -203,7 +217,8 @@ export function MainScreen() {
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           onAddCategory={() => setShowCategoryForm(true)}
-          onAddProject={() => setShowProjectForm(true)}
+          onAddProject={() => { setEditingProject(undefined); setShowProjectForm(true); }}
+          onEditProject={(proj) => { setEditingProject(proj); setShowProjectForm(true); }}
         />
         <SecretList />
         <div className="flex-1 border-l border-gray-200 dark:border-gray-800 overflow-y-auto">
@@ -237,7 +252,10 @@ export function MainScreen() {
         <CategoryForm onClose={() => setShowCategoryForm(false)} />
       )}
       {showProjectForm && (
-        <ProjectForm onClose={() => setShowProjectForm(false)} />
+        <ProjectForm
+          onClose={() => { setShowProjectForm(false); setEditingProject(undefined); }}
+          editProject={editingProject}
+        />
       )}
       <ToastContainer />
     </div>

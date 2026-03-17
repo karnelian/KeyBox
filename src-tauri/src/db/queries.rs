@@ -378,7 +378,7 @@ pub fn insert_project(conn: &Connection, id: &str, name: &str, color: &str) -> R
     )
     .map_err(|e| {
         if e.to_string().contains("UNIQUE") {
-            AppError::CategoryDuplicate(name.to_string())
+            AppError::ProjectDuplicate(name.to_string())
         } else {
             AppError::DatabaseError(e.to_string())
         }
@@ -386,10 +386,74 @@ pub fn insert_project(conn: &Connection, id: &str, name: &str, color: &str) -> R
     Ok(())
 }
 
+pub fn update_project(
+    conn: &Connection,
+    id: &str,
+    name: Option<&str>,
+    color: Option<&str>,
+) -> Result<crate::models::project::Project, AppError> {
+    let mut sets = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut idx = 1;
+
+    if let Some(n) = name {
+        sets.push(format!("name = ?{}", idx));
+        param_values.push(Box::new(n.to_owned()));
+        idx += 1;
+    }
+    if let Some(c) = color {
+        sets.push(format!("color = ?{}", idx));
+        param_values.push(Box::new(c.to_owned()));
+        idx += 1;
+    }
+
+    if sets.is_empty() {
+        let mut stmt = conn.prepare(
+            "SELECT id, name, color, sort_order FROM projects WHERE id = ?1",
+        )?;
+        return stmt
+            .query_row(params![id], |row| {
+                Ok(crate::models::project::Project {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    color: row.get(2)?,
+                    order: row.get(3)?,
+                })
+            })
+            .map_err(|_| AppError::ProjectNotFound(id.to_string()));
+    }
+
+    let sql = format!(
+        "UPDATE projects SET {} WHERE id = ?{}",
+        sets.join(", "),
+        idx
+    );
+    param_values.push(Box::new(id.to_owned()));
+
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+    let affected = conn.execute(&sql, params_refs.as_slice())?;
+    if affected == 0 {
+        return Err(AppError::ProjectNotFound(id.to_string()));
+    }
+
+    let mut stmt = conn
+        .prepare("SELECT id, name, color, sort_order FROM projects WHERE id = ?1")?;
+    stmt.query_row(params![id], |row| {
+        Ok(crate::models::project::Project {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            color: row.get(2)?,
+            order: row.get(3)?,
+        })
+    })
+    .map_err(|_| AppError::ProjectNotFound(id.to_string()))
+}
+
 pub fn delete_project(conn: &Connection, id: &str) -> Result<(), AppError> {
     let affected = conn.execute("DELETE FROM projects WHERE id = ?1", params![id])?;
     if affected == 0 {
-        return Err(AppError::SecretNotFound(id.to_string()));
+        return Err(AppError::ProjectNotFound(id.to_string()));
     }
     Ok(())
 }

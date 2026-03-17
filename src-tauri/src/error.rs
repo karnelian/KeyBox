@@ -20,6 +20,12 @@ pub enum AppError {
     #[error("이미 존재하는 카테고리입니다: {0}")]
     CategoryDuplicate(String),
 
+    #[error("프로젝트를 찾을 수 없습니다: {0}")]
+    ProjectNotFound(String),
+
+    #[error("이미 존재하는 프로젝트입니다: {0}")]
+    ProjectDuplicate(String),
+
     #[error("암호화 오류: {0}")]
     CryptoError(String),
 

@@ -31,6 +31,17 @@ pub fn create_project(
 }
 
 #[tauri::command]
+pub fn update_project(
+    id: String,
+    name: Option<String>,
+    color: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<Project, AppError> {
+    let db = state.db.lock().unwrap();
+    queries::update_project(&db, &id, name.as_deref(), color.as_deref())
+}
+
+#[tauri::command]
 pub fn delete_project(id: String, state: State<'_, AppState>) -> Result<(), AppError> {
     let db = state.db.lock().unwrap();
     queries::delete_project(&db, &id)

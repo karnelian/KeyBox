@@ -12,6 +12,7 @@ import type {
   Category,
   UpdateCategoryInput,
   Project,
+  UpdateProjectInput,
   GetSecretsFilter,
   SecretCounts,
   ImportResult,
@@ -133,6 +134,10 @@ export async function getProjects(): Promise<Project[]> {
 
 export async function createProject(name: string, color: string): Promise<Project> {
   return invoke<Project>("create_project", { name, color });
+}
+
+export async function updateProject(input: UpdateProjectInput): Promise<Project> {
+  return invoke<Project>("update_project", { ...input });
 }
 
 export async function deleteProject(id: string): Promise<void> {
@@ -334,6 +339,14 @@ async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>): Promi
       const proj: Project = { id: generateId(), name, color, order: mockProjects.length };
       mockProjects.push(proj);
       return proj as T;
+    }
+
+    case "update_project": {
+      const pi = mockProjects.findIndex((p) => p.id === (args?.id as string));
+      if (pi === -1) throw new Error("프로젝트를 찾을 수 없습니다");
+      if (args?.name) mockProjects[pi]!.name = args.name as string;
+      if (args?.color) mockProjects[pi]!.color = args.color as string;
+      return { ...mockProjects[pi]! } as T;
     }
 
     case "delete_project": {

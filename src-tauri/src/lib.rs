@@ -6,7 +6,7 @@ pub mod models;
 pub mod state;
 pub mod tray;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager, WindowEvent};
 
 use db::connection;
 use state::AppState;
@@ -23,6 +23,14 @@ pub fn run() {
             app.manage(app_state);
             tray::setup_tray(app)?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                // X 버튼 클릭 시 창을 숨기고 트레이로 최소화
+                api.prevent_close();
+                let _ = window.hide();
+                let _ = window.emit("tray-lock", ());
+            }
         })
         .invoke_handler(tauri::generate_handler![
             // Auth
@@ -51,6 +59,7 @@ pub fn run() {
             // Projects
             commands::project::get_projects,
             commands::project::create_project,
+            commands::project::update_project,
             commands::project::delete_project,
             // Export / Import
             commands::export::export_data,
