@@ -142,8 +142,8 @@ pub fn copy_to_clipboard(
     let secs = clear_seconds.unwrap_or(30);
     if secs > 0 {
         let handle = app_handle.clone();
-        tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_secs(secs)).await;
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(secs));
             let _ = handle.clipboard().write_text("");
         });
     }

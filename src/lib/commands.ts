@@ -61,6 +61,10 @@ export async function loadSettings(): Promise<Record<string, unknown> | null> {
   try { return JSON.parse(json); } catch { return null; }
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return invoke<void>("change_password", { currentPassword, newPassword });
+}
+
 // --- Secret Commands ---
 
 export async function createSecret(input: CreateSecretInput): Promise<Secret> {
@@ -197,6 +201,15 @@ async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>): Promi
       const pw = args?.password as string;
       if (pw !== mockPassword) throw new Error("마스터 패스워드가 올바르지 않습니다");
       mockUnlocked = true;
+      return undefined as T;
+    }
+
+    case "change_password": {
+      const cur = args?.currentPassword as string;
+      const nw = args?.newPassword as string;
+      if (cur !== mockPassword) throw new Error("마스터 패스워드가 올바르지 않습니다");
+      if (nw.length < 8) throw new Error("패스워드는 8자 이상이어야 합니다");
+      mockPassword = nw;
       return undefined as T;
     }
 

@@ -234,6 +234,49 @@ pub fn update_secret_fields(
     Ok(())
 }
 
+pub fn get_all_secret_rows(conn: &Connection) -> Result<Vec<SecretRow>, AppError> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, encrypted_value, nonce, service, category_id, project_id, pinned, tags, notes, environment, created_at, updated_at
+         FROM secrets",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        let pinned_int: i32 = row.get(7)?;
+        Ok(SecretRow {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            encrypted_value: row.get(2)?,
+            nonce: row.get(3)?,
+            service: row.get(4)?,
+            category_id: row.get(5)?,
+            project_id: row.get(6)?,
+            pinned: pinned_int != 0,
+            tags: row.get(8)?,
+            notes: row.get(9)?,
+            environment: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
+        })
+    })?;
+    let mut items = Vec::new();
+    for row in rows {
+        items.push(row?);
+    }
+    Ok(items)
+}
+
+pub fn update_secret_encrypted_value(
+    conn: &Connection,
+    id: &str,
+    encrypted_value: &[u8],
+    nonce: &[u8],
+) -> Result<(), AppError> {
+    conn.execute(
+        "UPDATE secrets SET encrypted_value = ?1, nonce = ?2 WHERE id = ?3",
+        params![encrypted_value, nonce, id],
+    )?;
+    Ok(())
+}
+
 pub fn delete_secret(conn: &Connection, id: &str) -> Result<(), AppError> {
     let affected = conn.execute("DELETE FROM secrets WHERE id = ?1", params![id])?;
     if affected == 0 {

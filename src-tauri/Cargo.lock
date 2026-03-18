@@ -1944,7 +1944,6 @@ dependencies = [
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-dialog",
  "thiserror 1.0.69",
- "tokio",
  "uuid",
 ]
 

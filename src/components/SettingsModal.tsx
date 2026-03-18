@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { changePassword } from "@/lib/commands";
 import type { AppConfig } from "@/types";
 
 type Theme = AppConfig["theme"];
@@ -26,6 +27,47 @@ export function SettingsModal({
   const [clipSec, setClipSec] = useState(clipboardClearSeconds);
   const [selectedTheme, setSelectedTheme] = useState<Theme>(theme);
 
+  // 비밀번호 변경
+  const [showPwChange, setShowPwChange] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    setPwError("");
+    setPwSuccess(false);
+
+    if (newPw.length < 8) {
+      setPwError("새 비밀번호는 8자 이상이어야 합니다");
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwError("새 비밀번호가 일치하지 않습니다");
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      await changePassword(currentPw, newPw);
+      setPwSuccess(true);
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+      setTimeout(() => {
+        setPwSuccess(false);
+        setShowPwChange(false);
+      }, 2000);
+    } catch (e: unknown) {
+      const msg = typeof e === "string" ? e : (e as Error).message;
+      setPwError(msg);
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
   const handleSave = () => {
     onSave({ autoLockMinutes: lockMin, clipboardClearSeconds: clipSec, theme: selectedTheme });
     onClose();
@@ -33,7 +75,7 @@ export function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl w-full max-w-md p-6 shadow-2xl">
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl w-full max-w-md max-h-[85vh] flex flex-col p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">설정</h2>
           <button
@@ -44,7 +86,7 @@ export function SettingsModal({
           </button>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* 테마 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -112,6 +154,51 @@ export function SettingsModal({
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               복사 후 지정 시간이 지나면 클립보드를 비웁니다
             </p>
+          </div>
+
+          {/* 비밀번호 변경 */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <button
+              onClick={() => { setShowPwChange(!showPwChange); setPwError(""); setPwSuccess(false); }}
+              className="flex items-center justify-between w-full text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              <span>비밀번호 변경</span>
+              <span className="text-gray-400">{showPwChange ? "▲" : "▼"}</span>
+            </button>
+            {showPwChange && (
+              <div className="mt-3 space-y-3">
+                <input
+                  type="password"
+                  placeholder="현재 비밀번호"
+                  value={currentPw}
+                  onChange={(e) => setCurrentPw(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="password"
+                  placeholder="새 비밀번호 (8자 이상)"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="password"
+                  placeholder="새 비밀번호 확인"
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {pwError && <p className="text-xs text-danger">{pwError}</p>}
+                {pwSuccess && <p className="text-xs text-success">비밀번호가 변경되었습니다</p>}
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwLoading || !currentPw || !newPw || !confirmPw}
+                  className="w-full py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {pwLoading ? "변경 중..." : "비밀번호 변경"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

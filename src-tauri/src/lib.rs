@@ -38,6 +38,7 @@ pub fn run() {
             commands::auth::setup_master_password,
             commands::auth::unlock,
             commands::auth::lock,
+            commands::auth::change_password,
             commands::auth::save_settings,
             commands::auth::load_settings,
             // Secrets
